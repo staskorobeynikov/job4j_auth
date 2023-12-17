@@ -25,7 +25,7 @@ create database fullstack_auth;
 
 - execute command in terminal:
 ```
-mvn clean install
+mvn clean install -P production
 ```
 
 - execute command in terminal:
