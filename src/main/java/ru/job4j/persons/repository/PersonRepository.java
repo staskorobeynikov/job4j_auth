@@ -14,4 +14,6 @@ public interface PersonRepository extends CrudRepository<Person, Integer> {
     @Modifying
     @Query("delete from Person p where p.id = ?1")
     int delete(Integer id);
+
+    Optional<Person> findByLogin(String username);
 }
