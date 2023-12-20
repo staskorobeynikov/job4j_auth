@@ -26,14 +26,8 @@ public class PersonService implements UserDetailsService {
         return personRepository.findAll();
     }
 
-    public Optional<Person> save(Person person) {
-        try {
-            personRepository.save(person);
-            return Optional.of(person);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-        }
-        return Optional.empty();
+    public Person save(Person person) {
+        return personRepository.save(person);
     }
 
     public Optional<Person> findById(Integer id) {
