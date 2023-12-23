@@ -1,13 +1,15 @@
 package ru.job4j.persons.service;
 
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.job4j.persons.dto.PersonPatchDto;
 import ru.job4j.persons.model.Person;
 import ru.job4j.persons.repository.PersonRepository;
 
@@ -17,16 +19,19 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class PersonService implements UserDetailsService {
 
     private final PersonRepository personRepository;
+
+    private final PasswordEncoder encoder;
 
     public List<Person> findAll() {
         return personRepository.findAll();
     }
 
     public Person save(Person person) {
+        person.setPassword(encoder.encode(person.getPassword()));
         return personRepository.save(person);
     }
 
@@ -35,10 +40,12 @@ public class PersonService implements UserDetailsService {
     }
 
     @Transactional
-    public Optional<Person> update(Person person) {
-        return personRepository.findById(person.getId())
+    public Optional<Person> update(Integer id, Person person) {
+        person.setPassword(encoder.encode(person.getPassword()));
+        return personRepository.findById(id)
                 .map(entity -> personRepository.save(person))
-                .stream().findFirst();
+                .stream()
+                .findFirst();
     }
 
     @Transactional
@@ -58,5 +65,15 @@ public class PersonService implements UserDetailsService {
                 .orElseThrow(() -> {
                     throw new UsernameNotFoundException(username);
                 });
+    }
+
+    @Transactional
+    public Optional<Person> patch(Integer id, PersonPatchDto personPatchDto) {
+        return personRepository.findById(id)
+                .map(entity -> {
+                    entity.setPassword(encoder.encode(personPatchDto.getPassword()));
+                    return entity;
+                })
+                .map(personRepository::save);
     }
 }

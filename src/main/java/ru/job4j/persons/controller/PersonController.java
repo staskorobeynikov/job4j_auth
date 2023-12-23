@@ -6,9 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import ru.job4j.persons.dto.PersonPatchDto;
 import ru.job4j.persons.model.Person;
 import ru.job4j.persons.service.PersonService;
 
@@ -26,8 +26,6 @@ public class PersonController {
 
     private final PersonService personService;
 
-    private final PasswordEncoder encoder;
-
     private final ObjectMapper objectMapper;
 
     @GetMapping
@@ -42,7 +40,6 @@ public class PersonController {
         if (person.getLogin() == null || person.getPassword() == null) {
             throw new NullPointerException("Login and password mustn't be empty");
         }
-        person.setPassword(encoder.encode(person.getPassword()));
         Person result = personService.save(person);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -58,14 +55,26 @@ public class PersonController {
                 ));
     }
 
-    @PutMapping
-    public ResponseEntity<Person> update(@RequestBody Person person) {
+    @PutMapping("/{id}")
+    public ResponseEntity<Person> update(@PathVariable Integer id,
+                                         @RequestBody Person person) {
         if (person.getLogin() == null || person.getPassword() == null) {
             throw new NullPointerException("Login and password mustn't be empty");
         }
-        return personService.update(person)
+        return personService.update(id, person)
                 .map(result -> ResponseEntity.ok().body(result))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_MODIFIED).build());
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<Person> patch(@PathVariable Integer id,
+                                        @RequestBody PersonPatchDto personPatchDto) {
+        if (personPatchDto.getPassword() == null) {
+            throw new NullPointerException("Password mustn't be empty");
+        }
+        return personService.patch(id, personPatchDto)
+                .map(result -> ResponseEntity.ok().body(result))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
     @DeleteMapping("/{id}")
