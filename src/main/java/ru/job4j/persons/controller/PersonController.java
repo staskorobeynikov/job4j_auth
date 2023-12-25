@@ -14,6 +14,7 @@ import ru.job4j.persons.service.PersonService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -36,10 +37,7 @@ public class PersonController {
     }
 
     @PostMapping
-    public ResponseEntity<Person> create(@RequestBody Person person) {
-        if (person.getLogin() == null || person.getPassword() == null) {
-            throw new NullPointerException("Login and password mustn't be empty");
-        }
+    public ResponseEntity<Person> create(@RequestBody @Valid Person person) {
         Person result = personService.save(person);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -57,10 +55,7 @@ public class PersonController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Person> update(@PathVariable Integer id,
-                                         @RequestBody Person person) {
-        if (person.getLogin() == null || person.getPassword() == null) {
-            throw new NullPointerException("Login and password mustn't be empty");
-        }
+                                         @RequestBody @Valid Person person) {
         return personService.update(id, person)
                 .map(result -> ResponseEntity.ok().body(result))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_MODIFIED).build());
@@ -68,10 +63,7 @@ public class PersonController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<Person> patch(@PathVariable Integer id,
-                                        @RequestBody PersonPatchDto personPatchDto) {
-        if (personPatchDto.getPassword() == null) {
-            throw new NullPointerException("Password mustn't be empty");
-        }
+                                        @RequestBody @Valid PersonPatchDto personPatchDto) {
         return personService.patch(id, personPatchDto)
                 .map(result -> ResponseEntity.ok().body(result))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
@@ -90,7 +82,11 @@ public class PersonController {
         response.setStatus(HttpStatus.CONFLICT.value());
         response.setContentType("application/json");
         response.getWriter().write(objectMapper.writeValueAsString(new HashMap<>() { {
-            put("message", "User can't be created, username is exists...");
+            String message = "User can't be created, username is exists...";
+            if ("PUT".equals(request.getMethod())) {
+                message = "User can't be edited, username is exists...";
+            }
+            put("message", message);
             put("type", exception.getClass());
         }}));
         log.error(exception.getLocalizedMessage(), exception);
